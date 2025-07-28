@@ -2,12 +2,14 @@
 
 include 'conecta.php';
 
-$btn_acao = $_REQUEST['btn_acao'];
+$aluno = $_GET['aluno'];
 
-if (isset($btn_acao) && $btn_acao == 'gravar') {
+if (isset($_POST['btn_acao']) && $_POST['btn_acao'] == 'gravar') {
+
     $ra = trim($_POST['ra']);
     $nome = trim($_POST['nome']);
     $email = trim($_POST['email']);
+    $aluno = $_GET['aluno'];
 
     $msg_erro = "";
     $msg_sucesso = "";
@@ -29,9 +31,16 @@ if (isset($btn_acao) && $btn_acao == 'gravar') {
     }
 
     if (!empty($ra) && !empty($nome) && !empty($email) && is_numeric($ra)) {
+
+        $aluno_existe = "";
+        if (!empty($aluno)) {
+            $aluno_existe = "AND aluno <> $aluno";
+        }
+
         $sql_valida = "SELECT ra, nome
                             FROM aluno
                             WHERE ra = $ra
+                            {$aluno_existe}
                         ";
         $res_valida = pg_query($con, $sql_valida);
 
@@ -42,7 +51,7 @@ if (isset($btn_acao) && $btn_acao == 'gravar') {
         }
     }
 
-    if (strlen($msg_erro) === 0) {
+    if (strlen($msg_erro) === 0 && empty($aluno)) {
         pg_query($con, "BEGIN");
 
         $sql = "INSERT INTO aluno (ra, nome, email) VALUES
@@ -58,11 +67,47 @@ if (isset($btn_acao) && $btn_acao == 'gravar') {
             pg_query($con, "ROLLBACK");
             $msg_erro .= "Erro ao cadastrar Aluno";
         }
+    } elseif (strlen($msg_erro) === 0 && !empty($aluno)) {
+        pg_query($con, "BEGIN");
+
+        $sql = "UPDATE aluno SET ra = $ra,
+                                 nome = '$nome',
+                                 email = '$email'
+                                 WHERE aluno = $aluno
+                            ";
+        $res = pg_query($con, $sql);
+
+        if ($res) {
+            pg_query($con, "COMMIT");
+            header("Location: formulario_aluno.php?atualizado=ok");
+            exit;
+        } else {
+            pg_query($con, "ROLLBACK");
+            $msg_erro = "Erro ao atualizar dados aluno";
+        }
+    }
+}
+
+if (isset($_GET['aluno'])) {
+
+    $aluno = $_GET['aluno'];
+
+    $sql = "select ra, nome, email from aluno where aluno = $aluno";
+    $res = pg_query($con, $sql);
+
+    if (pg_num_rows($res) > 0) {
+        $ra = pg_fetch_result($res, 0, 'ra');
+        $nome = pg_fetch_result($res, 0, 'nome');
+        $email = pg_fetch_result($res, 0, 'email');
     }
 }
 
 if (isset($_GET['gravado']) && $_GET['gravado'] === 'ok') {
     $msg_sucesso = "Aluno cadastrado com sucesso";
+}
+
+if (isset($_GET['atualizado']) && $_GET['atualizado'] === 'ok') {
+    $msg_sucesso = "Aluno atualizado com sucesso";
 }
 
 include 'menu.php';
@@ -105,7 +150,7 @@ include 'menu.php';
     <div class="row justify-content-center">
         <div class="col-md-12">
 
-            <form action="formulario_aluno.php" method="POST">
+            <form action="<?= $PHP_SELF ?>" method="POST">
 
                 <div class="mb-3">
                     <label for="ra" class="form-label">RA</label>
@@ -142,6 +187,7 @@ include 'menu.php';
                     <th>Nome</th>
                     <th>Email</th>
                     <th>Data Cadastro</th>
+                    <th>Ações</th>
                 </tr>
             </thead>
             <tbody>
@@ -173,6 +219,7 @@ include 'menu.php';
                             <td><?=$nome?></td>
                             <td><?=$email?></td>
                             <td><?=$data_cadastro?></td>
+                            <td><a href="formulario_aluno.php?aluno=<?= $id?>"><button class="btn btn-warning">Editar</button></a></td>
                         </tr>
 
               <?php } ?>
@@ -189,3 +236,4 @@ include 'menu.php';
 </div>
 
 <?php include 'rodape.php' ?>
+

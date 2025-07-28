@@ -2,7 +2,7 @@
 
 include 'conecta.php';
 
-if ($_POST['resolver_chamado']=='resolver') {
+if ($_POST['resolver_chamado'] == 'resolver') {
     $chamado = $_POST['chamado'];
 
     $sql_update = "UPDATE chamado SET resolvido = 't', data_resolvido = CURRENT_TIMESTAMP WHERE chamado = $chamado";
@@ -21,20 +21,22 @@ if (isset($_POST['btn_acao']) == 'consultar') {
 
     $msg_erro = "";
 
-    $sql = "SELECT chamado.chamado,
-                   concat(aluno.ra, ' - ', aluno.nome) as nome_aluno,
-                   problema.descricao as problema_descricao,
-                   chamado.descricao_problema as chamado_descricao_problema,
-                   concat(sala.numero, ' - ', sala.descricao) as sala,
-                   to_char(data_abertura, 'DD/MM/YYYY') as data_abertura,
-                   chamado.resolvido,
-                   to_char(chamado.data_resolvido, 'DD/MM/YYYY') as data_resolvido
-                FROM chamado
-                INNER JOIN aluno USING(aluno)
-                INNER JOIN problema USING(problema)
-                INNER JOIN sala USING(sala)
-                WHERE aluno.ra::text ILIKE '%$raBuscar%'
-                ORDER BY chamado.chamado ASC
+    $sql = "WITH dados_chamado AS (
+                SELECT chamado.chamado,
+                       aluno.ra,
+                    concat(aluno.ra, ' - ', aluno.nome) as nome_aluno,
+                    problema.descricao as problema_descricao,
+                    chamado.descricao_problema as chamado_descricao_problema,
+                    concat(sala.numero, ' - ', sala.descricao) as sala,
+                    to_char(data_abertura, 'DD/MM/YYYY') as data_abertura,
+                    chamado.resolvido,
+                    to_char(chamado.data_resolvido, 'DD/MM/YYYY') as data_resolvido
+                    FROM chamado
+                    INNER JOIN aluno USING(aluno)
+                    INNER JOIN problema USING(problema)
+                    INNER JOIN sala USING(sala)
+                )
+                SELECT * FROM dados_chamado WHERE ra::text ILIKE '%$raBuscar%' ORDER BY chamado ASC
             ";
     $res = pg_query($con, $sql);
 
