@@ -132,14 +132,14 @@ include 'menu.php';
 
                 $resolvido = $linha['resolvido'] === 't' ? "Sim" : "Não";
 
-                if (empty($linha['data_resolvido'])) {
+                if ($resolvido == "Sim" && !empty($linha['data_resolvido'])) {
+                    $botao_resolvido = '<span style="background-color: #007bff; color: white; padding: 4px 8px; border-radius: 4px;">Resolvido</span>';
+                } else {
                     $botao_resolvido = "
-                            <form method='POST'>
+                            <form method='post'>
                             <input type='hidden' name='chamado' value='" . $linha["chamado"] . "'>
                             <button type='submit' name='resolver_chamado' value='resolver' class='btn btn-primary'>Resolver</button>
                             </form>";
-                } else {
-                    $botao_resolvido = '<span style="background-color: #007bff; color: white; padding: 4px 8px; border-radius: 4px;">Resolvido</span>';
                 }
 
                 echo "<tr>

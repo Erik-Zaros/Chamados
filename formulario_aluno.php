@@ -61,8 +61,10 @@ if (isset($_POST['btn_acao']) && $_POST['btn_acao'] == 'gravar') {
 
         if ($res) {
             pg_query($con, "COMMIT");
-            header("Location: formulario_aluno.php?gravado=ok");
-            exit;
+            $msg_sucesso = "Aluno cadastrado com sucesso.";
+            unset($_GET);
+            unset($_POST);
+            echo "<meta http-equiv=refresh content=\"2;URL=formulario_aluno.php\">";
         } else {
             pg_query($con, "ROLLBACK");
             $msg_erro .= "Erro ao cadastrar Aluno";
@@ -79,8 +81,10 @@ if (isset($_POST['btn_acao']) && $_POST['btn_acao'] == 'gravar') {
 
         if ($res) {
             pg_query($con, "COMMIT");
-            header("Location: formulario_aluno.php?atualizado=ok");
-            exit;
+            $msg_sucesso = "Aluno atualizado com sucesso.";
+            unset($_GET);
+            unset($_POST);
+            echo "<meta http-equiv=refresh content=\"2;URL=formulario_aluno.php\">";
         } else {
             pg_query($con, "ROLLBACK");
             $msg_erro = "Erro ao atualizar dados aluno";
@@ -100,14 +104,6 @@ if (isset($_GET['aluno'])) {
         $nome = pg_fetch_result($res, 0, 'nome');
         $email = pg_fetch_result($res, 0, 'email');
     }
-}
-
-if (isset($_GET['gravado']) && $_GET['gravado'] === 'ok') {
-    $msg_sucesso = "Aluno cadastrado com sucesso";
-}
-
-if (isset($_GET['atualizado']) && $_GET['atualizado'] === 'ok') {
-    $msg_sucesso = "Aluno atualizado com sucesso";
 }
 
 include 'menu.php';
@@ -203,14 +199,16 @@ include 'menu.php';
                             ";
                 $res = pg_query($con, $sql);
 
-                if (pg_num_rows($res) > 0) {
+                $alunos = pg_fetch_all($res);
 
-                    for ($i = 0; $i < pg_num_rows($res); $i++) {
-                        $id = pg_fetch_result($res, $i, 'id');
-                        $ra = pg_fetch_result($res, $i, 'ra');
-                        $nome = pg_fetch_result($res, $i, 'nome');
-                        $email = pg_fetch_result($res, $i, 'email');
-                        $data_cadastro = pg_fetch_result($res, $i, 'data_cadastro');
+                if ($alunos) {
+
+                    foreach ($alunos as $aluno) {
+                        $id = $aluno['id'];
+                        $ra = $aluno['ra'];
+                        $nome = $aluno['nome'];
+                        $email = $aluno['email'];
+                        $data_cadastro = $aluno['data_cadastro'];
                     ?>
 
                         <tr>
