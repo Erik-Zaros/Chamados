@@ -2,8 +2,6 @@
 
 include 'conecta.php';
 
-$chamado = $_GET['chamado'];
-
 if (isset($_POST['btn_acao']) && $_POST['btn_acao'] == 'gravar') {
 
     $aluno = trim($_POST['aluno']);

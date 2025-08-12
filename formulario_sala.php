@@ -7,6 +7,7 @@ $btn_acao = $_REQUEST['btn_acao'];
 if (isset($btn_acao) && $btn_acao == 'gravar') {
     $numero = trim($_POST['numero']);
     $descricao = trim($_POST['descricao']);
+    $sala = $_GET['sala'];
 
     $msg_erro = "";
     $msg_sucesso = "";
@@ -23,11 +24,15 @@ if (isset($btn_acao) && $btn_acao == 'gravar') {
         $msg_erro .= "Preencha o campo Descrição <br>";
     }
 
+    if (!empty($sala)) {
+        $cond_sql = " AND sala != $sala";
+    }
+
     if (!empty($numero) && !empty($descricao) && is_numeric($numero)) {
         $sql_valida = "SELECT numero, descricao
                        FROM sala
-                       WHERE numero = $numero";
-        
+                       WHERE numero = $numero
+                       $cond_sql";
         $res_valida = pg_query($con, $sql_valida);
 
         if (pg_num_rows($res_valida) > 0) {
@@ -36,7 +41,8 @@ if (isset($btn_acao) && $btn_acao == 'gravar') {
         }
     }
 
-    if (strlen($msg_erro) === 0) {
+    if (strlen($msg_erro) === 0 && strlen($sala) == 0) {
+
         pg_query($con, "BEGIN");
 
         $sql = "INSERT INTO sala (numero, descricao) VALUES
@@ -46,17 +52,49 @@ if (isset($btn_acao) && $btn_acao == 'gravar') {
 
         if ($res) {
             pg_query($con, "COMMIT");
-            header("Location: formulario_sala.php?gravado=ok");
-            exit;
+            $msg_sucesso = "Sala cadastrada com sucesso";
+            unset($_GET);
+            unset($_POST);
+            echo "<meta http-equiv=refresh content=\"2;URL=formulario_sala.php\">";
         } else {
             pg_query($con, "ROLLBACK");
             $msg_erro .= "Erro ao cadastrar Sala";
         }
+    } elseif (strlen($msg_erro) === 0 && strlen($sala) > 0) {
+        pg_query($con, "BEGIN");
+
+        $sql = "UPDATE sala SET numero = $numero,
+                       descricao = '$descricao'
+                       WHERE sala = $sala
+        ";
+        $res = pg_query($con, $sql);
+
+        if ($res) {
+            pg_query($con, "COMMIT");
+            $msg_sucesso = "Sala atualizada com sucesso!";
+            unset($_GET);
+            unset($_POST);
+            echo "<meta http-equiv=refresh content=\"2;URL=formulario_sala.php\">";
+        }
     }
 }
 
-if (isset($_GET['gravado']) && $_GET['gravado'] === 'ok') {
-    $msg_sucesso = "Sala cadastrada com sucesso";
+if (isset($_GET['sala'])) {
+
+    $sala = $_GET['sala'];
+
+    $sql = "SELECT sala,
+                   numero,
+                   descricao
+            FROM sala
+            WHERE sala = $sala
+        ";
+    $res = pg_query($con, $sql);
+
+    if (pg_num_rows($res) > 0) {
+        $numero = pg_fetch_result($res, 0, 'numero');
+        $descricao = pg_fetch_result($res, 0, 'descricao');
+    }
 }
 
 include 'menu.php';
@@ -99,7 +137,7 @@ include 'menu.php';
     <div class="row justify-content-center">
         <div class="col-md-12">
 
-            <form action="formulario_sala.php" method="POST">
+        <form action="<?= $PHP_SELF ?>" method="POST">
 
                 <div class="mb-3">
                     <label for="ra" class="form-label">Número Sala</label>
@@ -113,7 +151,6 @@ include 'menu.php';
 
                 <div class="d-flex justify-content-between">
                     <button type="submit" name="btn_acao" class="btn btn-primary" value="gravar">Gravar</button>
-                    <!-- <a href="menu.html" class="btn btn-secondary">Voltar</a> -->
                 </div>
 
             </form>
@@ -130,7 +167,8 @@ include 'menu.php';
                     <th>ID</th>
                     <th>NÚMERO</th>
                     <th>DESCRIÇÃO</th>
-                    <th>Data Cadastro</th>
+                    <th>DATA CADASTRO</th>
+                    <th>AÇÕES</th>
                 </tr>
             </thead>
             <tbody>
@@ -158,6 +196,7 @@ include 'menu.php';
                             <td><?=$numero?></td>
                             <td><?=$descricao?></td>
                             <td><?=$data_cadastro?></td>
+                            <td><a href="formulario_sala.php?sala=<?= $id?>"><button class='btn btn-warning'>Editar</button></a></td>
                         </tr>
 
               <?php } ?>
